@@ -1,0 +1,46 @@
+"""
+den: jas přejde do norm @2sec
+        bez budíku:     hodina:minuta *5sec [volitelně *4sec den.měsíc *1sec]
+        s budíkem:      hodina:,minuta *5sec [volitelně *4sec den.,měsíc *1sec]
+        , indikuje zapnutý budík, pomalu blikající indikuje čtení kalendáře (jednou za 4 hodiny), rychle blikající indikuje chybu čtení kalendáře
+ .      ' indikuje stisk
+        zobrazí příští budík hodina':minuta *3sec den'.měsíc *2sec jednou, nebo mezery, dále norm.
+ - 3sec vypnout/zapnout buzení, po uvolnění stisku vždy aktivovat čtení kalendáře
+
+noc: jas přejde do min @2sec
+        s budíkem:      , *1sec ^v *1sec
+        bez budíku:     ^ *1sec v *4sec
+ .      ' indikuje stisk
+        hodina:minuta *2sec
+ - 2sec příští budík hodina':minuta *2sec nebo mezery, dále noc
+ - 4sec začne jasit displejdo normálního jasu a po uvolnění stisku přepne na 10s do denního ovládacího režimu
+
+předbuzení v režimu noc: nastavený čas (10 minut) zapne normální režim času a jasu
+ .      vypne předbuzení a buzení, aktivuje noční nebo denní režim
+
+buzení: v čase buzení začne hrát, zapne normální režim času a bliká s displejem v cca 5 sekundovém rytmu od min do max jasu
+ .      vypne buzení a hraní, aktivuje noční nebo denní režim
+
+"""
+"""
+showMode           day               night             prealarm          alarm
+----------------------------------------------------------------------------------------
+isAlarmTime        removeCurrAlm     removeCurrAlm     removeCurrAlm
+ && not suppressed =>alarm           =>alarm           =>alarm
+isPreAlarmTime     =>prealarm        =>prealarm
+isDayTime->0       =>night
+isDayTime->1                         =>day
+----------------------------------------------------------------------------------------
+onShowModeChange   startShow         startShow         startShow         startShow
+                                                                         startPlay
+----------------------------------------------------------------------------------------
+btPush             suppressShow      suppressShow      suppressAlarm     stopPlay
+                                                                          + suppressAlarm
+                   showAlarm         showNow+Alarm     restoreShow       restoreShow
+
+btPushLong         3s=>toggleAlarm   3s=>toggleAlarm
+
+btRelease          restoreShow       restoreShow
+                   reloadEvents      reloadEvents
+----------------------------------------------------------------------------------------
+"""

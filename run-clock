@@ -1,0 +1,21 @@
+#!/bin/bash
+declare -x HOME="/home/pi/budiq"
+declare -x LANG="cs_CZ.UTF-8"
+declare -x LOGNAME="pi"
+declare -x MAIL="/var/mail/pi"
+declare -x PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+declare -x PYTHONPATH="/usr/lib/python37.zip:/usr/lib/python3.7:/usr/lib/python3.7/lib-dynload:/home/pi/.local/lib/python3.7/site-packages:/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-packages"
+declare -x PWD="/home/pi/budiq"
+declare -x USER="pi"
+declare -x USERNAME="pi"
+X_LOGDIR="${HOME}/log"
+mkdir -p "${X_LOGDIR}"
+X_LOGFILE="${X_LOGDIR}/clock.log"
+cd $PWD
+rm -f "${X_LOGFILE}.5"
+mv "${X_LOGFILE}".{4,5}
+mv "${X_LOGFILE}".{3,4}
+mv "${X_LOGFILE}".{2,3}
+mv "${X_LOGFILE}".{1,2}
+mv "${X_LOGFILE}"{,.1}
+./clock.py &>>"${X_LOGFILE}"
