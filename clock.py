@@ -5,8 +5,8 @@ BQ_PUSH1=4
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.events.readonly"]
 TOKENFILE="creds/client_token.json"
-CREDSFILE="creds/client_secret_625853770585-7i4p6nnkffb2b5cb7kbtu7bv2bv0kiv4.apps.googleusercontent.com.json"
-CALENDAR="6o6npp6u15a3uhklvlj23hkqpo@group.calendar.google.com"
+CREDSFILE="creds/<your_client_secret>.apps.googleusercontent.com.json"
+CALENDAR="<your_calendar>@group.calendar.google.com"
 ALMSFETCH=6
 
 ALMPLAYFILE='mp3/Sumo.mp3'
