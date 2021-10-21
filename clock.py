@@ -5,8 +5,8 @@ BQ_PUSH1=4
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.events.readonly"]
 TOKENFILE="creds/client_token.json"
-CREDSFILE="creds/<your-private-api-client-secret.apps.googleusercontent.com.json"
-CALENDAR="<your-dedicated-calendar-link>@group.calendar.google.com"
+CREDSFILE="creds/client_secret_625853770585-7i4p6nnkffb2b5cb7kbtu7bv2bv0kiv4.apps.googleusercontent.com.json"
+CALENDAR="6o6npp6u15a3uhklvlj23hkqpo@group.calendar.google.com"
 ALMSFETCH=6
 
 ALMPLAYFILE='mp3/Sumo.mp3'
@@ -14,7 +14,7 @@ PREALMTIME=600
 POSTALMTIME=1800
 
 DAYSWITCH={'05:45':'dusk','07:45':'day','20:30':'dawn','21:30':'night'}
-BRIGHT={'night':1,'day':64,'dusk':16,'dawn':32,'max':224}
+BRIGHT={'prealarm':128,'alarm':223,'night':1,'day':64,'dusk':1,'dawn':16}
 
 
 import gi
@@ -60,7 +60,8 @@ class Budiq(object):
     self.showTmr=GLib.timeout_add_seconds(5,self.startShow)
     self.player=Player()
 
-    self.button1=Button(BQ_PUSH1, self.hbutton1)
+    self.bt1Timer=None
+    self.button1=Button(BQ_PUSH1, self.bt1handler)
     self.caldapi=CaldAPI(SCOPES,TOKENFILE,CREDSFILE,CALENDAR)
 
   def startShow(self):
@@ -74,6 +75,7 @@ class Budiq(object):
       self.showTmr=None
 
   def _updateShow(self, isSyncTimed=False):
+    print('_updateShow',isSyncTimed)
     if not isSyncTimed:
       self.stopShow()
     now = datetime.now(tz=TZ)
@@ -92,7 +94,7 @@ class Budiq(object):
         if now >= alm['tm']:
           self.alarms.remove(alm)
 #          self.nextAlmLoad=None
-          self.nextAlmLoad=now+timedelta(minutes=15)
+          self.nextAlmLoad=now+timedelta(minutes=61)
           if self.almMode=='on':
             showMode='alarm'
           if self.almMode!='off':
@@ -104,7 +106,7 @@ class Budiq(object):
         break
 #    print(showMode)
 
-# stop player on play expiration time if nobody seems to care
+# stop player on expiration time if nobody seems to care
     if self.almExpiryTime and now>=self.almExpiryTime:
       self.player.stop()
       self.almExpiryTime=None
@@ -114,19 +116,19 @@ class Budiq(object):
       self.showMode=showMode
       self.setShow(now)
       if showMode=='alarm':
-        self.disp.setBright(toBright=BRIGHT['max'],fromBright=BRIGHT[showMode],transTime=1000, repeat=True)
+        self.disp.setBright(toBright=BRIGHT[showMode],transTime=1000, repeat=True)
         self.player.play(ALMPLAYFILE)
       else:
-        self.disp.setBright(toBright=BRIGHT['max' if showMode=='prealarm' else showMode],transTime=1000, repeat=False)
+        self.disp.setBright(toBright=BRIGHT[showMode],transTime=1000, repeat=False)
 
-    print(vars(self))
+    print('updated',now,vars(self))
 
-# read alarms in synchronized show state when it is due to
+# načíst alarmy, pokud jsme zasynchronizovaní a nadešel čas
     if isSyncTimed:
       self.fetchAlarms()
       return True
 
-# synchronize to minute begin
+# a pokud nejsme v minutovém taktu, zasynchronizovat
     diff=60-now.time().second
     if diff < 1:
       diff=60
@@ -143,6 +145,7 @@ class Budiq(object):
 
 
   def setShow(self,now,frozen=False):
+    print('set   ',now,vars(self),'frozen=',frozen)
     dot=0
     if self.almMode=='on' and len(self.alarms) > 0:
       dot|=1
@@ -189,7 +192,7 @@ class Budiq(object):
     return p if p != None else v
 
 
-  def hbutton1(self,channel,val):
+  def bt1handler(self,channel,val):
 #    print( "hbutton: ",val)
     self.isPush=val
     if val==Button.IsDOWN:
@@ -202,24 +205,31 @@ class Budiq(object):
       elif self.showMode=='night':
         self.showMode='day'
         self.setShow(datetime.now(tz=TZ))
-        self.button1.setTimer(3000,self.bt1ShowAlm)
+        self.bt1Timer=GLib.timeout_add(3000,self.bt1hShowAlm)
         return
       else:
-        self.bt1ShowAlm(channel,val)
+        self.bt1hShowAlm()
         return
+    else:
+      if self.bt1Timer:
+        GLib.source_remove(self.bt1Timer)
+        self.bt1Timer=None
     self.startShow()
 
-  def bt1ShowAlm(self,channel,val):
+  def bt1hShowAlm(self):
     self.setShow(None if len(self.alarms) <1 else self.alarms[0]['tm'],frozen=True)
-    self.button1.setTimer(3000,self.tbutton1)
+    self.bt1Timer=GLib.timeout_add(3000,self.bt1hToggleAlm)
+    return False
 
-  def tbutton1(self,channel,val):
+  def bt1hToggleAlm(self):
     if self.almMode!='on':
       self.almMode='on'
     else:
       self.almMode='off'
     self.setShow(None if len(self.alarms) <1 else self.alarms[0]['tm'],frozen=True)
     self.nextAlmLoad=datetime.now(tz=TZ)
+    self.bt1Timer=None
+    return False
 
 
   def fetchAlarms(self):
@@ -255,10 +265,15 @@ class AlmLoader(threading.Thread):
 
 
 if __name__=="__main__":
+
+#def nope():
   Gst.init(None)
 
   print("start")
   budiq=Budiq()
+#  for i in ['02:12','05:29','05:30','05:31','12:12','16:30','21:29','21:30','21:31','23:33']:
+#    print('isDay("',i,'")',budiq.whatLight(DAYSWITCH,i))
+
 
   loop = GLib.MainLoop()
   loop.run()

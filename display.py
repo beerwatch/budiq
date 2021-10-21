@@ -18,7 +18,7 @@ class Disp(object):
     self.bright=0x70
     self.dimmer=None
     serial = spi(port=0, device=0, gpio=noop())
-    device = max7219(serial) #, width=8)
+    device = max7219(serial) #, width=4)
     self.seg = sevensegment(device)
 
   def tick(self):
@@ -28,15 +28,18 @@ class Disp(object):
     if self.last != curr:
       self.last=curr
       self.seg.text="    "+curr[::-1]
-    self.ntick=self.ntick+1
+    self.ntick+=1
     return True
 
   def setShow(self,texts,timeout):
-    if self.ticker != None: GLib.source_remove(self.ticker)
+    if self.ticker != None:
+      GLib.source_remove(self.ticker)
+      self.ticker=None
     self.ntick=0
     self.texts=texts
     self.tick()
-    self.ticker=GLib.timeout_add(timeout,self.tick)
+    if timeout>0:
+      self.ticker=GLib.timeout_add(timeout,self.tick)
 
   def setBright(self, toBright=0x70, fromBright=None, transTime=0, repeat=False):
     if self.dimmer != None:
@@ -71,7 +74,7 @@ class Disp(object):
 #    print("dimstep(",stepTime, toBright, fromBright, delta, repeat,") curr=",self.bright)
 
     if abs(toBright - self.bright) > abs(delta):
-      self.bright=self.bright+delta
+      self.bright+=delta
       self.seg.device.contrast(self.bright)
       return True
     if toBright != self.bright:

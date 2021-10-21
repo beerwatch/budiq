@@ -14,36 +14,34 @@ class Button(object):
   IsUP=0
   def __init__(self, channel=BQ_PUSH1, handler=None):
     self.channel=channel
-    self.handler=handler
-    self.timer=None
-    self.timehandler=None
-    self.lastval=GPIO.HIGH
+    self.extHandler=handler
+    self.keepVal=self.IsUP
+    self.keepCnt=1
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(self.channel, GPIO.IN , pull_up_down=GPIO.PUD_UP )
-    GPIO.add_event_detect(self.channel, GPIO.BOTH, callback=self.handleEventUD , bouncetime=133)
+    GPIO.add_event_detect(self.channel, GPIO.FALLING, callback=self.handleFall, bouncetime=63)
 
-  def handleEventUD(self , channel):
-    val=GPIO.input(channel)
-    if val==self.lastval:
-      val=1-val
-    self.lastval=val
-    self.handleEvent(channel, self.IsDOWN if self.lastval==GPIO.LOW else self.IsUP)
+  def handleFall(self , channel):
+    if self.keepVal==self.IsDOWN:
+      return
+    self.keepVal=self.IsDOWN
+    self.keepCnt=3
+    if self.extHandler!=None:
+      self.extHandler(channel,self.keepVal)
+    GLib.timeout_add(37,self.handleKeeper)
 
-  def handleEvent(self , channel, val):
-    if self.timer!=None:
-      GLib.source_remove(self.timer)
-      self.timer=None
-    if self.handler!=None:
-      self.handler(channel,val)
-
-  def setTimer(self, timeout, timeHandler):
-    self.timehandler=timeHandler
-    self.timer=GLib.timeout_add(timeout,self.handleTimer)
-
-  def handleTimer(self):
-    if self.timehandler!=None:
-      self.timer=None
-      self.timehandler(self.channel,self.IsDOWN if self.lastval==GPIO.LOW else self.IsUP)
+  def handleKeeper(self):
+    val=GPIO.input(self.channel)
+    if self.keepVal==self.IsDOWN:
+      if val==GPIO.LOW:
+        self.keepCnt=3
+        return True
+      self.keepCnt-=1
+      if self.keepCnt>0:
+        return True
+      self.keepVal=self.IsUP
+      if self.extHandler!=None:
+        self.extHandler(self.channel,self.keepVal)
     return False
 
 
@@ -56,8 +54,8 @@ class Button_tester(object):
 
   def hbutton1(self,channel,val):
     print( "hbutton: ",val)
-    if val==Button.IsDOWN:
-      self.button1.setTimer(750,self.tbutton1)
+#    if val==Button.IsDOWN:
+#      self.button1.setTimer(750,self.tbutton1)
 
   def tbutton1(self,channel,val):
     print( "tbutton: ",val)
