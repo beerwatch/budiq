@@ -18,4 +18,4 @@ mv "${X_LOGFILE}".{3,4}
 mv "${X_LOGFILE}".{2,3}
 mv "${X_LOGFILE}".{1,2}
 mv "${X_LOGFILE}"{,.1}
-./clock.py &>>"${X_LOGFILE}"
+./clock.py >>"${X_LOGFILE}" 2>&1

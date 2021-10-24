@@ -5,8 +5,8 @@ BQ_PUSH1=4
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.events.readonly"]
 TOKENFILE="creds/client_token.json"
-CREDSFILE="creds/<your_client_secret>.apps.googleusercontent.com.json"
-CALENDAR="<your_calendar>@group.calendar.google.com"
+CREDSFILE="creds/<your-client_secret-file>.apps.googleusercontent.com.json"
+CALENDAR="<your-calendar-id-different-from-main-preferably>@group.calendar.google.com"
 ALMSFETCH=6
 
 ALMPLAYFILE='mp3/Sumo.mp3'
@@ -257,7 +257,7 @@ class AlmLoader(threading.Thread):
     for event in events:
       start = event['start'].get('dateTime', event['start'].get('date'))
       tmStart=parser.parse(start)
-      alarms.append( {'tm':tmStart,'summary':event['summary']} )
+      alarms.append( {'tm':tmStart,'summary':event['summary'] if 'summary' in dir(event) else 'unnamed' } )
     print(alarms)
     self.budiq.alarms=alarms
     self.budiq.almLoad="none"
